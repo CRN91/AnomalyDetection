@@ -79,7 +79,8 @@ def apply_patterns(stream,month_avg):
   :param month (int 0 < month <= 11): The month of that day.
   :return (list of floats): The generated stream with patterns applied.
   """
-  new_stream = pd.Series(dtype="float64")
+  #new_stream = pd.Series(dtype="float64")
+  new_stream = []
   # Iterates through each minute of the day
   for i in range(1440):
     # Daily peak multiplier
@@ -87,24 +88,25 @@ def apply_patterns(stream,month_avg):
     # Each month's standard deviation is used for the Gaussian noise
     noise = gaussian_noise(month_avg,daily_peak)
     # Patterns are applied to each value
-    new_stream = new_stream._append(pd.Series([daily_peak+noise]))
+    #new_stream = new_stream._append(pd.Series([daily_peak+noise]))
+    new_stream.append(daily_peak + noise)
   return new_stream
 
-if __name__ == '__main__':
-  # Get baseline values
-  avg_months, std_months = load_baseline() # Old values, std_months is still used
-  # Lookup table of interpolated gas flow graph
-  avg_days = list(pd.read_csv("gas_flow_lookup_table.csv")['value'])
+def random_day():
+  """
+  Gets a random day and its corresponding month. I used this for initial testing.
 
+  :return: day (0<=day<365), month (0<=month<12)
+  """
   # Get a random day and month
   month_lengths = {
-    0: 31, 1: 28, 2: 31,
-    3: 30, 4: 31, 5: 30,
-    6: 31, 7: 31, 8: 30,
-    9: 31, 10: 30, 11: 31
+    0: 30, 1: 27, 2: 30,
+    3: 29, 4: 30, 5: 29,
+    6: 30, 7: 30, 8: 29,
+    9: 30, 10: 29, 11: 30
   }
   month = random.randint(0, 11)
-  day_of_month = random.randint(1, month_lengths[month])
+  day_of_month = random.randint(0, month_lengths[month])
   count = 0
   day = day_of_month
   for key, value in month_lengths.items():
@@ -112,32 +114,92 @@ if __name__ == '__main__':
       break
     count += 1
     day += value
+  return day, month
 
-  # Get the daily mean and standard deviation
-  #month_avg = avg_months[month]
-  month_avg = avg_days[day]
-  month_std = std_months[month]
+def day_to_month(find_day):
+  """
+  Takes a value 0<=day<365, and returns the month it is in
 
-  # Generate the stream
-  lower_bound, upper_bound = get_point_bounds(month_avg, month_std)
-  stream = generate_24_hours(lower_bound, upper_bound)
+  :param find_day (int): day to find
+  :return month (int): (0<=month<12)
+  """
+  month_lengths = {
+    0: 30, 1: 27, 2: 30,
+    3: 29, 4: 30, 5: 29,
+    6: 30, 7: 30, 8: 29,
+    9: 30, 10: 29, 11: 30
+  }
+  month = -1
+  count_day = 0
+  for key, value in month_lengths.items():
+    if count_day >  find_day:
+      break
+    count_day += value
+    month+=1
+  return month
 
-  final_stream = apply_patterns(stream,month_avg)
+def setup():
+  """
+  Reads and returns baseline values
 
-  # Comparing these values to the actual months they're pretty close so I reckon its a good simulation
-  stream_mean = final_stream.mean()
-  stream_std = final_stream.std()
-  stream_max = final_stream.max()
-  print("Values of generated stream for day {} of the year\nMean: {}\nStd: {}\nMax: {}".format(day, stream_mean, stream_std, stream_max))
+  :return: avg_days list of mean daily values, std_months list of monthly standard deviations
+  """
+  # Get baseline values
+  avg_months, std_months = load_baseline()  # Old values, std_months is still used
+  # Lookup table of interpolated gas flow graph
+  avg_days = list(pd.read_csv("gas_flow_lookup_table.csv")['value'])
+  return avg_days, std_months
 
+def run_simulation(start_day = 0, duration = 365):
+  """
+  Runs the main simulation loop after setting up. Default to 1 year of data.
+  Returns the completed datastream.
 
-#if __name__ == '__main__':
-#  # Instantiate the generator
-#  generator = GasFlowGenerator()
+  :param start_day (int): day to begin the sim 0<=day<365
+  :param duration (int): how many days to simulate
+  :return: completed datastream where each value represents the gas flow per day at that minute.
+  """
+  print("Starting Simulation")
+  avg_days, std_months = setup()
+  datastream = []
+  # Iterate through each day, generating a stream of data for each minute
+  for day in range(start_day, start_day+duration):
+    if start_day > 364:
+      start_day = start_day % 364
+
+    # Gets the baselines for these values
+    month = day_to_month(day)
+    daily_flow_mean = avg_days[day]
+    month_flow_std = std_months[month] # Probably don't need this
+
+    # Generate the stream
+    lower_bound, upper_bound = get_point_bounds(daily_flow_mean, month_flow_std)
+    stream = generate_24_hours(lower_bound, upper_bound)
+
+    final_stream = apply_patterns(stream, daily_flow_mean)
+    datastream = datastream + final_stream
+
+  print("Simulation Complete")
+  return datastream
+
+if __name__ == '__main__':
+  run_simulation()
+  #avg_days, std_months = setup()
+  #day, month = random_day()
 #
-#  # Generate the stream of data points
-#  stream = generator.generate_24_hours()
+  ## Get the daily mean and standard deviation
+  ##month_avg = avg_months[month]
+  #month_avg = avg_days[day]
+  #month_std = std_months[month]
 #
-#  # Print the generated stream
-#  print(stream)
-
+  ## Generate the stream
+  #lower_bound, upper_bound = get_point_bounds(month_avg, month_std)
+  #stream = generate_24_hours(lower_bound, upper_bound)
+#
+  #final_stream = apply_patterns(stream,month_avg)
+#
+  ## Comparing these values to the actual months they're pretty close so I reckon its a good simulation
+  #stream_mean = final_stream.mean()
+  #stream_std = final_stream.std()
+  #stream_max = final_stream.max()
+  #print("Values of generated stream for day {} of the year\nMean: {}\nStd: {}\nMax: {}".format(day, stream_mean, stream_std, stream_max))
