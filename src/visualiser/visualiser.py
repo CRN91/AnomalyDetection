@@ -10,10 +10,15 @@ index = count() # the minute
 x_vals = []
 y_vals = []
 
-def animate(i):
-  x_vals.append(next(index))
-  y_vals.append(next(simulation))
+x_minutes = 0
 
+
+def animate(i):
+  global x_minutes, x_vals, y_vals
+
+  x_vals = x_vals + [i for i in range(x_minutes, x_minutes + 1440)]
+  y_vals = y_vals + next(simulation)
+  x_minutes += 1440
   plt.cla()
   plt.plot(x_vals, y_vals)
 

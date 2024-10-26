@@ -181,8 +181,9 @@ def run_simulation(start_day = 0, duration = 365):
     #datastream = datastream + final_stream
 
     # Yields a single minute of data
-    for i in apply_patterns(stream, daily_flow_mean):
-      yield i
+    #for i in apply_patterns(stream, daily_flow_mean):
+    #  yield i
+    yield apply_patterns(stream, daily_flow_mean)
 
   #print("Simulation Complete")
   #return datastream
