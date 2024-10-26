@@ -147,7 +147,8 @@ def setup():
   # Get baseline values
   avg_months, std_months = load_baseline()  # Old values, std_months is still used
   # Lookup table of interpolated gas flow graph
-  avg_days = list(pd.read_csv("gas_flow_lookup_table.csv")['value'])
+  file_path = os.path.join(os.path.dirname(__file__),"gas_flow_lookup_table.csv")
+  avg_days = list(pd.read_csv(file_path)['value'])
   return avg_days, std_months
 
 def run_simulation(start_day = 0, duration = 365):
@@ -161,7 +162,7 @@ def run_simulation(start_day = 0, duration = 365):
   """
   print("Starting Simulation")
   avg_days, std_months = setup()
-  datastream = []
+  #datastream = []
   # Iterate through each day, generating a stream of data for each minute
   for day in range(start_day, start_day+duration):
     if start_day > 364:
@@ -176,11 +177,15 @@ def run_simulation(start_day = 0, duration = 365):
     lower_bound, upper_bound = get_point_bounds(daily_flow_mean, month_flow_std)
     stream = generate_24_hours(lower_bound, upper_bound)
 
-    final_stream = apply_patterns(stream, daily_flow_mean)
-    datastream = datastream + final_stream
+    #final_stream = apply_patterns(stream, daily_flow_mean)
+    #datastream = datastream + final_stream
 
-  print("Simulation Complete")
-  return datastream
+    # Yields a single minute of data
+    for i in apply_patterns(stream, daily_flow_mean):
+      yield i
+
+  #print("Simulation Complete")
+  #return datastream
 
 if __name__ == '__main__':
   run_simulation()
