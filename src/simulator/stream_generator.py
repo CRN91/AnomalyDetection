@@ -65,7 +65,6 @@ def gaussian_noise(month_avg, daily_peak, daily_max_actual = 74.43, max_capacity
 
   # Generate Gaussian noise and cap the value
   noise = random.gauss(0, final_sigma)
-  print("daily peak {} and final sigma {}".format(daily_peak, final_sigma))
   capped_noise = min(max(noise, -pipe_difference), pipe_difference)
 
   return capped_noise
@@ -92,15 +91,32 @@ def apply_patterns(stream,month_avg):
   return new_stream
 
 if __name__ == '__main__':
-  # Get month multipliers
-  avg_months, std_months = load_baseline()
+  # Get baseline values
+  avg_months, std_months = load_baseline() # Old values, std_months is still used
+  # Lookup table of interpolated gas flow graph
+  avg_days = list(pd.read_csv("gas_flow_lookup_table.csv")['value'])
 
-  # Get a random monthly multiplier
+  # Get a random day and month
+  month_lengths = {
+    0: 31, 1: 28, 2: 31,
+    3: 30, 4: 31, 5: 30,
+    6: 31, 7: 31, 8: 30,
+    9: 31, 10: 30, 11: 31
+  }
   month = random.randint(0, 11)
-  month = 5
-  month_avg = avg_months[month]
+  day_of_month = random.randint(1, month_lengths[month])
+  count = 0
+  day = day_of_month
+  for key, value in month_lengths.items():
+    if count == month:
+      break
+    count += 1
+    day += value
+
+  # Get the daily mean and standard deviation
+  #month_avg = avg_months[month]
+  month_avg = avg_days[day]
   month_std = std_months[month]
-  print(month_avg, month_std)
 
   # Generate the stream
   lower_bound, upper_bound = get_point_bounds(month_avg, month_std)
@@ -112,7 +128,7 @@ if __name__ == '__main__':
   stream_mean = final_stream.mean()
   stream_std = final_stream.std()
   stream_max = final_stream.max()
-  print("Values of generated stream for a day in month {}\nMean: {}\nStd: {}\nMax: {}".format(month+1, stream_mean, stream_std, stream_max))
+  print("Values of generated stream for day {} of the year\nMean: {}\nStd: {}\nMax: {}".format(day, stream_mean, stream_std, stream_max))
 
 
 #if __name__ == '__main__':
@@ -124,3 +140,4 @@ if __name__ == '__main__':
 #
 #  # Print the generated stream
 #  print(stream)
+

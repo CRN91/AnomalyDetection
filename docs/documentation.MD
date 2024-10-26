@@ -87,3 +87,12 @@ creating values that exceed the pipe capacity. So I capped the noise, which mean
 longer gaussian which I also didn't like. So now if the value is too high it becomes the
 difference / 4 so not every max is 75. This is not an elegant solution and I might need to
 come back to this, but it does add a noise value that is below the maximum capacity.
+
+### Interpolation
+
+As we had to remove missing data values and I wanted to create averages I used the monthly
+averages instead of the daily averages. I thought the implementation of this lead to very
+staggered seasonality as we go between months. So I have created a lookup table with the
+interpolated values to smooth out this ruggedness. The values for each day do not exceed 
+the pipe max capacity of 75. This takes care of the missing data, however I do think I've
+possibly over-engineered this part, although the simulation results should be more natural.
