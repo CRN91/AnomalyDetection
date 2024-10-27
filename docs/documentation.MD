@@ -107,3 +107,38 @@ staggered seasonality as we go between months. So I have created a lookup table 
 interpolated values to smooth out this ruggedness. The values for each day do not exceed 
 the pipe max capacity of 75. This takes care of the missing data, however I do think I've
 possibly over-engineered this part, although the simulation results should be more natural.
+
+# Inserting Anomalies
+
+A separate file `src/simulator/anomalies.py` contains functions to insert anomalies into the
+datastream. This also contains its own simulator run function `run_simulation_anomalies` that
+has a random chance to apply a selection of 4 anomalies before returning the datastream.
+
+The likelihood of each anomaly can be individually configured at the top of the script, along
+with the minimum and maximum duration of anomalies (durations are a random value between these
+bounds)
+
+## Outages
+
+As previously mentioned the year of data I got on Easington Langeled supply entry point, had
+2 outages during the year. This is when the gas flow became 0. This anomaly simulates this by
+setting values in the datastream to 0.
+
+## Leaks
+
+This anomaly simulates a leak in the pipe, or any other scenario where gas flow unpredictably
+decreases. This will randomly select a value between 1% and 10% and decrease the datastream
+data points by it.
+
+## Surges
+
+This anomaly simulates a surge of gas, could be the market predicted demand incorrectly and
+gas is put on the system or maybe a facility that uses high volumes of gas has an outage.
+It randomly selects a value between 1% and 10% and increases the data points in the 
+datastream by this percentage.
+
+## Sensor Fault
+
+The sensor used to measure the flow of gas might be faulty and get skewed values. For this
+anomaly I have essentially added additional gaussian noise to the datastream with the mu
+being the specific data point and the variance being 5.

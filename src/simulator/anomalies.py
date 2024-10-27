@@ -7,15 +7,26 @@ ANOMALY_MAX_DURATION = 5000 # minutes
 
 OUTAGE_THRESHOLD = 0.001
 LEAK_THRESHOLD = 0.001
-SURGE_THRESHOLD = 1
+SURGE_THRESHOLD = 0.001
+FAULT_THRESHOLD = 0.8
 
 def duration_calculator(stream_length, duration, random_start=True):
+  """
+  Calculates the start and end indexes for the data to be affected by an anomaly.
+  Calculates the remainder of the duration to apply to the next stream.
+
+  :param stream_length: Length of the datastream list
+  :param duration: Length for the anomaly to be applied
+  :param random_start: random start if True, else start at beginning
+  :return: start index, end index, anomaly duration for the consecutive stream
+  """
+  # Used on the first affected datastream of duration
   if random_start:
     start = random.randint(0, stream_length)
   else:
     start = 0
 
-  # Allows the outage to be spread across multiple days
+  # Allows the anomaly to be spread across multiple days
   available = stream_length - start
   if available < duration:
     end = stream_length
@@ -23,12 +34,20 @@ def duration_calculator(stream_length, duration, random_start=True):
     next_duration = duration - stream_length
   else:
     end = start + duration
-    # Duration set to 0 to indicate outage is finished
+    # Duration set to 0 to indicate anomaly is finished
     next_duration = 0
 
   return start, end, next_duration
 
 def apply_outage(stream, duration, random_start = True):
+  """
+  Sets values in the datastream to 0, depending on start and duration conditions.
+
+  :param stream: Datastream to apply outage
+  :param duration: Duration for the outage to be applied
+  :param random_start: starts at a random index if True, else start at beginning
+  :return: altered stream, outage duration for the consecutive stream
+  """
   stream_length = len(stream)
   start, end, next_duration = duration_calculator(stream_length, duration, random_start)
 
@@ -38,6 +57,14 @@ def apply_outage(stream, duration, random_start = True):
   return stream, next_duration
 
 def apply_leak(stream, duration, random_leak = 0):
+  """
+  Applies a multiplier to values in the datastream, depending on start and duration conditions.
+
+  :param stream: Stream to apply leak to
+  :param duration: Duration for the leak to apply for
+  :param random_leak: The multiplier of the leak, 0 will apply a random leak
+  :return: altered stream, leak duration for the consecutive stream, leak percentage
+  """
   stream_length = len(stream)
   start, end, next_duration = duration_calculator(stream_length, duration)
 
@@ -55,6 +82,15 @@ def apply_leak(stream, duration, random_leak = 0):
   return stream, next_duration, random_leak
 
 def apply_surge(stream, duration, random_surge = 0):
+  """
+  Applies a positive multiplier to values in the datastream, depending on start and duration conditions.
+  Caps value at 75.
+
+  :param stream: Stream to apply surge to
+  :param duration: Duration for the surge to apply for
+  :param random_surge: The multiplier of the surge, 0 will apply a random surge
+  :return: altered stream, surge duration for the consecutive stream, surge percentage
+  """
   stream_length = len(stream)
   start, end, next_duration = duration_calculator(stream_length, duration)
 
@@ -72,7 +108,35 @@ def apply_surge(stream, duration, random_surge = 0):
 
   return stream, next_duration, random_surge
 
+def apply_sensor_fault(stream, duration, random_start = True):
+  """
+  Makes values in the datastream random with a gaussian function, depending on start and duration conditions.
+  Mu and sigma set to the data point and 5 respectively
+
+  :param stream: Stream to apply fault to
+  :param duration: Duration for the fault to apply for
+  :param random_start: starts at a random index if True, else start at beginning
+  :return: altered stream, fault duration for the consecutive stream
+  """
+  stream_length = len(stream)
+  start, end, next_duration = duration_calculator(stream_length, duration)
+
+  for i in range(start, end):
+    fault_value = random.gauss(stream[i], 5)
+    if fault_value > 75: # min function doesn't work with floats
+      fault_value = 75
+    stream[i] = fault_value
+
+  return stream, next_duration
+
 def run_simulation_anomalies(start_day = 0, sim_duration = 365):
+  """
+  Runs the Gas Flow Simulation and randomly applying anomalies to the datastream.
+
+  :param start_day: The day of the year to start the simulation
+  :param sim_duration: Length of the simulation (Each event represents a minute)
+  :return: 24 hours of Gas Flow data represented as a list of floats, chance to have anomalies
+  """
   sim = run_simulation(start_day, sim_duration)
 
   # Initial anomalies setup
@@ -81,6 +145,7 @@ def run_simulation_anomalies(start_day = 0, sim_duration = 365):
   leak_percentage = 0
   surge = False
   surge_percentage = 0
+  fault = False
 
   for _ in range(sim_duration-start_day):
     datastream =  next(sim)
@@ -123,6 +188,19 @@ def run_simulation_anomalies(start_day = 0, sim_duration = 365):
         surge = True
     else:
       surge = random.random() < SURGE_THRESHOLD
+
+    # Inserting sensor fault anomaly
+    if fault:
+      fault_duration = random.randint(ANOMALY_MIN_DURATION, ANOMALY_MAX_DURATION)
+      datastream, fault_duration = apply_sensor_fault(datastream, fault_duration, random_start=False)
+
+      # Sets outage for next stream
+      if fault_duration == 0:
+        fault = False
+      else:
+        fault = True
+    else:
+      fault = random.random() < FAULT_THRESHOLD
 
     yield datastream
 
