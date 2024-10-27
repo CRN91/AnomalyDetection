@@ -7,13 +7,29 @@ import os
 def generate_point(lower_bound, upper_bound):
   return random.uniform(lower_bound, upper_bound)
 
-def generate_24_hours(lower_bound, upper_bound):
+def generate_24_hours(daily_avg):
+  lower_bound, upper_bound = get_point_bounds(daily_avg)
   return [generate_point(lower_bound, upper_bound) for _ in range(1440)]
 
 def get_point_bounds(daily_avg):
-  return daily_avg*0.99, daily_avg*1.01
+  return daily_avg * 0.99, daily_avg * 1.01
 
-def daily_peak_multiplier(x, daily_avg, daily_max_actual = 74.43):
+def calculate_seasonal_multiplier(daily_avg):
+  """
+  The peak day periods varies with seasonality. It can have variations of
+  upto 30% in the summer and not be considered at all during the winter.
+
+  :param daily_avg:
+  :return:
+  """
+  daily_max_actual = 73.65 # The maximum daily average we got from our baseline
+
+  seasonal_rate = 1 - (daily_avg / daily_max_actual)
+  if seasonal_rate > 0.15:
+    seasonal_rate = 0.15
+  return seasonal_rate
+
+def daily_peak_multiplier(minute, seasonal_rate):
   """
   Calculates a value multiplier according to peak times of the day.
   No data available so assumption is it follows energy usage with peak
@@ -27,32 +43,27 @@ def daily_peak_multiplier(x, daily_avg, daily_max_actual = 74.43):
   :return (float): The peak time multiplier of that minute.
   """
   # Cosine graph with 2 peaks in our range of 1440 minutes located at 6am and 6pm
-  seasonal_rate = 1 - (daily_avg/daily_max_actual)
-  if seasonal_rate > 0.15:
-    seasonal_rate = 0.15
-  return seasonal_rate*math.cos(4*math.pi*x/1440 + math.pi) + 1
+  return seasonal_rate*math.cos(4*math.pi*minute/1440 + math.pi) + 1
 
 def gaussian_noise(daily_avg, daily_peak, daily_max_actual = 74.43, max_capacity = 75):
-  """
-  Gaussian Noise to add to stream. Mean is around 0 so shouldn't affect
-  the actual daily mean of the data. Sigma is set to 5% of the monthly mean.
+    """
+    Gaussian Noise to add to stream. Mean is around 0 so shouldn't affect
+    the actual daily mean of the data. Sigma is set to 5% of the monthly mean.
+    :param daily_avg:
+    :return random float:
+    """
+    # Values we can play around with to prevent exceeding limit of the pipe
+    pipe_difference = max_capacity - daily_peak
+    # Desired sigma: 3% of the monthly average
+    desired_sigma = daily_avg * 0.001
+    # Final sigma: min of desired sigma and max allowed noise
+    final_sigma = min(desired_sigma, pipe_difference / 15)
 
-  :param daily_avg: The daily average of the data.
-  :param daily_peak: The daily peak of the data.
-  :return random float:
-  """
-  # Values we can play around with to prevent exceeding limit of the pipe
-  pipe_difference = max_capacity - daily_peak
-  # Desired sigma: 3% of the monthly average
-  desired_sigma = daily_avg * 0.03
-  # Final sigma: min of desired sigma and max allowed noise
-  final_sigma = min(desired_sigma, pipe_difference / 4)
+    # Generate Gaussian noise and cap the value
+    noise = random.gauss(0, final_sigma)
+    capped_noise = min(max(noise, -pipe_difference), pipe_difference)
 
-  # Generate Gaussian noise and cap the value
-  noise = random.gauss(0, final_sigma)
-  capped_noise = min(max(noise, -pipe_difference), pipe_difference)
-
-  return capped_noise
+    return capped_noise
 
 def apply_patterns(stream,daily_avg):
   """
@@ -64,17 +75,16 @@ def apply_patterns(stream,daily_avg):
   :param daily_avg (float): The daily average of the stream.
   :return (list of floats): The generated stream with patterns applied.
   """
-  #new_stream = pd.Series(dtype="float64")
   new_stream = []
+  seasonal_multiplier = calculate_seasonal_multiplier(daily_avg)
   # Iterates through each minute of the day
   for i in range(1440):
     # Daily peak multiplier
-    daily_peak = stream[i]*daily_peak_multiplier(i,daily_avg)
+    daily_peak = stream[i]*daily_peak_multiplier(i, seasonal_multiplier)
     # Each month's standard deviation is used for the Gaussian noise
-    noise = gaussian_noise(daily_avg,daily_peak)
+    noise = gaussian_noise(daily_avg, daily_peak)
     # Patterns are applied to each value
-    #new_stream = new_stream._append(pd.Series([daily_peak+noise]))
-    new_stream.append(daily_peak + noise)
+    new_stream.append(daily_peak)
   return new_stream
 
 def setup():
@@ -99,7 +109,6 @@ def run_simulation(start_day = 0, duration = 365):
   """
   print("Starting Simulation")
   avg_days = setup()
-  #datastream = []
   # Iterate through each day, generating a stream of data for each minute
   for day in range(start_day, start_day+duration):
     if start_day > 364:
@@ -109,12 +118,34 @@ def run_simulation(start_day = 0, duration = 365):
     daily_flow_mean = avg_days[day]
 
     # Generate the stream
-    lower_bound, upper_bound = get_point_bounds(daily_flow_mean)
-    stream = generate_24_hours(lower_bound, upper_bound)
+    stream = generate_24_hours(daily_flow_mean)
 
     final_stream = apply_patterns(stream, daily_flow_mean)
 
     yield final_stream
 
 if __name__ == '__main__':
-  run_simulation()
+  print(run_simulation())
+
+
+  #avg_days = setup()
+  #avg_days_pd = pd.Series(avg_days)
+  ##print(avg_days_pd.max())
+#
+  #day = 150
+#
+  ## Generate the stream
+  ##lower_bound, upper_bound = get_point_bounds(avg_days[day])
+  #stream = generate_24_hours(avg_days[day])
+#
+  #final_stream = pd.Series(apply_patterns(stream, avg_days[day]))
+  #print(list(final_stream))
+  #start = 0
+  #for i in list(final_stream):
+  #  print(i-start)
+  #  start = i
+  # Comparing these values to the actual months they're pretty close so I reckon its a good simulation
+  #stream_mean = final_stream.mean()
+  #stream_std = final_stream.std()
+  #stream_max = final_stream.max()
+  #print("Values of generated stream for day {} of the year\nMean: {}\nStd: {}\nMax: {}".format(day, stream_mean, stream_std, stream_max))
