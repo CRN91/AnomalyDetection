@@ -51,12 +51,15 @@ def apply_outage(stream, duration, random_start = True):
   stream_length = len(stream)
   start, end, next_duration = duration_calculator(stream_length, duration, random_start)
 
+  # Python will modify the stream outside of the function so make a copy
+  modified_stream = stream.copy()
+
   for i in range(start, end):
-    stream[i] = 0
+    modified_stream[i] = 0
 
-  return stream, next_duration
+  return modified_stream, next_duration
 
-def apply_leak(stream, duration, random_leak = 0):
+def apply_leak(stream, duration, random_leak = 0, random_start = True):
   """
   Applies a multiplier to values in the datastream, depending on start and duration conditions.
 
@@ -65,23 +68,26 @@ def apply_leak(stream, duration, random_leak = 0):
   :param random_leak: The multiplier of the leak, 0 will apply a random leak
   :return: altered stream, leak duration for the consecutive stream, leak percentage
   """
-  stream_length = len(stream)
-  start, end, next_duration = duration_calculator(stream_length, duration)
-
   # If not already set leak percentage, can be between 1% and 10%
   if random_leak == 0:
-    random_leak = random.uniform(0.9,0.99)
+    random_leak = random.uniform(0.9, 0.99)
+
+  stream_length = len(stream)
+  start, end, next_duration = duration_calculator(stream_length, duration, random_start)
+
+  # Python will modify the stream outside of the function so make a copy
+  modified_stream = stream.copy()
 
   for i in range(start, end):
-    stream[i] = stream[i] * random_leak
+    modified_stream[i] = stream[i] * random_leak
 
   # Reset leak if completed
   if next_duration == 0:
     random_leak = 0
 
-  return stream, next_duration, random_leak
+  return modified_stream, next_duration, random_leak
 
-def apply_surge(stream, duration, random_surge = 0):
+def apply_surge(stream, duration, random_surge = 0, random_start = True):
   """
   Applies a positive multiplier to values in the datastream, depending on start and duration conditions.
   Caps value at 75.
@@ -91,22 +97,25 @@ def apply_surge(stream, duration, random_surge = 0):
   :param random_surge: The multiplier of the surge, 0 will apply a random surge
   :return: altered stream, surge duration for the consecutive stream, surge percentage
   """
-  stream_length = len(stream)
-  start, end, next_duration = duration_calculator(stream_length, duration)
-
   # If not already set surge percentage, can be between 1% and 10%
   if random_surge == 0:
-    random_surge = random.uniform(1.01,1.1)
+    random_surge = random.uniform(1.01, 1.1)
+
+  stream_length = len(stream)
+  start, end, next_duration = duration_calculator(stream_length, duration, random_start)
+
+  # Python will modify the stream outside of the function so make a copy
+  modified_stream = stream.copy()
 
   for i in range(start, end):
     surge_value = min(75, stream[i] * random_surge) # Max capacity is 75
-    stream[i] = surge_value
+    modified_stream[i] = surge_value
 
   # Reset surge if completed
   if next_duration == 0:
     random_surge = 0
 
-  return stream, next_duration, random_surge
+  return modified_stream, next_duration, random_surge
 
 def apply_sensor_fault(stream, duration, random_start = True):
   """
@@ -119,15 +128,18 @@ def apply_sensor_fault(stream, duration, random_start = True):
   :return: altered stream, fault duration for the consecutive stream
   """
   stream_length = len(stream)
-  start, end, next_duration = duration_calculator(stream_length, duration)
+  start, end, next_duration = duration_calculator(stream_length, duration, random_start)
+
+  # Python will modify the stream outside of the function so make a copy
+  modified_stream = stream.copy()
 
   for i in range(start, end):
     fault_value = random.gauss(stream[i], 5)
     if fault_value > 75: # min function doesn't work with floats
       fault_value = 75
-    stream[i] = fault_value
+    modified_stream[i] = fault_value
 
-  return stream, next_duration
+  return modified_stream, next_duration
 
 def run_simulation_anomalies(start_day = 0, sim_duration = 365):
   """
