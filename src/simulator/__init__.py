@@ -1,3 +1,4 @@
-from .stream_generator import *
+from .stream_generator import run_simulation
+from .anomalies import run_simulation_anomalies
 
-__all__ = ['load_baseline', 'generate_point', 'generate_24_hours', 'get_point_bounds', 'gaussian_noise', 'daily_peak_multiplier', 'apply_patterns', 'run_simulation', 'setup']
+__all__ = ['run_simulation','run_simulation_anomalies']
