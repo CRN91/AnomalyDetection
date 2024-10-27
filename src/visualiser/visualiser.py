@@ -3,9 +3,7 @@ from matplotlib.animation import FuncAnimation
 from src.simulator import run_simulation
 import matplotlib.pyplot as plt
 
-simulation = run_simulation()
-
-
+simulation = run_simulation(duration=1000)
 
 x_vals = []
 y_vals = []

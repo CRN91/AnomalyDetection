@@ -1,5 +1,16 @@
 # Gas Flow Simulation
 
+## Summary
+
+* Simulation of Easington Langeled supply entry point gas flow (mcm/day)
+* Event intervals simulate 1 minute
+* Max capacity 75 mcm/day
+* Actual data used as baseline
+* Interpolated daily values generated from baseline
+* Seasonality
+* Peak day times, variable with seasonality
+* Gaussian noise
+
 ## Easington Langeled
 
 Flow measurement is the measure of bulk fluid movement.

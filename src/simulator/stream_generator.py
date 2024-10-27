@@ -12,7 +12,7 @@ def generate_24_hours(daily_avg):
   return [generate_point(lower_bound, upper_bound) for _ in range(1440)]
 
 def get_point_bounds(daily_avg):
-  return daily_avg * 0.99, daily_avg * 1.01
+  return daily_avg - (daily_avg * 0.01), daily_avg + (daily_avg * 0.01)
 
 def calculate_seasonal_multiplier(daily_avg):
   """
@@ -101,8 +101,8 @@ def run_simulation(start_day = 0, duration = 365):
   avg_days = setup()
   # Iterate through each day, generating a stream of data for each minute
   for day in range(start_day, start_day+duration):
-    if start_day > 364:
-      start_day = start_day % 364
+    if day > 364:
+      day = day % 365
 
     # Gets the baselines for these values
     daily_flow_mean = avg_days[day]
@@ -113,9 +113,14 @@ def run_simulation(start_day = 0, duration = 365):
     final_stream = apply_patterns(stream, daily_flow_mean)
 
     yield final_stream
+  print("Completed Simulation")
 
 if __name__ == '__main__':
   run_simulation()
+  #daily_mean = 50
+  #seasonal_rate = calculate_seasonal_multiplier(daily_mean)
+  #print(daily_peak_multiplier(720,seasonal_rate))
+
 
   #captured_noise = []
   #for _ in range(1440):
@@ -126,6 +131,8 @@ if __name__ == '__main__':
   #print(cn.mean())
 #
   #avg_days = setup()
+  #print(len(avg_days))
+  #print(avg_days[364])
   #avg_days_pd = pd.Series(avg_days)
   ##print(avg_days_pd.max())
 #
