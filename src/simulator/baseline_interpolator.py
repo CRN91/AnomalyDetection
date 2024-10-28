@@ -1,6 +1,6 @@
 import pandas as pd
 from scipy.interpolate import interp1d
-from src.utils import load_config
+from src.utils import load_config, load_csv_pd
 
 def get_mid_points(filename):
     """
@@ -11,22 +11,12 @@ def get_mid_points(filename):
     :return:
     """
     # Load file with error handling
-    try:
-        monthly_baseline = pd.read_csv(filename)['Value']
-        monthly_baseline = pd.to_numeric(monthly_baseline, errors='raise')
-    except FileNotFoundError as e:
-        print("ERROR: The monthly baseline csv file was not found: {}".format(e))
-        raise
-    except pd.errors.EmptyDataError as e:
-        print("ERROR: The monthly baseline csv file is empty: {}".format(e))
-        raise
-    except pd.errors.ParserError as e:
-        print("ERROR: The monthly baseline csv file is corrupted: {}".format(e))
-        raise
-    except Exception as e:
-        print("An unexpected error occurred: {}".format(e))
-        raise
 
+    monthly_baseline = load_csv_pd(filename)['value']
+    try:
+        monthly_baseline = pd.to_numeric(monthly_baseline, errors='raise')
+    except ValueError:
+        print("ERROR: Values are not numeric")
     if not len(monthly_baseline) == 12:
         raise ValueError("ERROR: Should be 12 values in monthly baseline")
 

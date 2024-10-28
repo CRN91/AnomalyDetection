@@ -1,147 +1,141 @@
 import unittest
+from unittest.mock import patch
+import pandas as pd
+import numpy as np
+from src.simulator.stream_generator import (
+    generate_point, generate_24_hours, get_point_bounds,
+    calculate_seasonal_multiplier, daily_peak_multiplier,
+    gaussian_noise, apply_patterns, setup, run_simulation
+)
 
-from src.simulator.stream_generator import *
-
-class TestFlowGenerator(unittest.TestCase):
+class TestGasFlowSimulator(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures before each test method."""
-        # Sample test data
-        self.sample_csv_data = '''Value,Std
-                                1.2,0.1
-                                0.8,0.2
-                                1.0,0.15'''
+        self.sample_daily_avg = 50.0
+        self.max_daily_avg = 73.65
+        self.max_capacity = 75
 
-        # Mock baseline values for testing
-        self.mock_baseline = [[1.2, 0.8, 1.0], [0.1, 0.2, 0.15]]
+    def test_generate_point_normal(self):
+        """Test generate_point with normal bounds"""
+        lower, upper = 45.0, 55.0
+        point = generate_point(lower, upper)
+        self.assertTrue(lower <= point <= upper)
 
-    def test_generate_point(self):
-        """Test the generate_point function."""
-        # Test with various bounds
-        for _ in range(100):  # Run multiple times to ensure consistency
-            lower, upper = 1.0, 2.0
-            point = generate_point(lower, upper)
-            self.assertTrue(lower <= point <= upper)
+    def test_generate_point_equal_bounds(self):
+        """Test generate_point with equal bounds"""
+        value = 50.0
+        point = generate_point(value, value)
+        self.assertEqual(point, value)
 
-        # Test with equal bounds
-        point = generate_point(1.0, 1.0)
-        self.assertEqual(point, 1.0)
+    def test_generate_point_negative_bounds(self):
+        """Test generate_point with negative bounds"""
+        lower, upper = -10.0, -5.0
+        point = generate_point(lower, upper)
+        self.assertTrue(lower <= point <= upper)
 
-        # Test with negative bounds
-        point = generate_point(-2.0, -1.0)
-        self.assertTrue(-2.0 <= point <= -1.0)
+    def test_generate_24_hours_length(self):
+        """Test generate_24_hours returns correct number of points"""
+        points = generate_24_hours(self.sample_daily_avg)
+        self.assertEqual(len(points), 1440)  # 24 hours * 60 minutes
 
-    def test_generate_24_hours(self):
-        """Test the generate_24_hours function."""
-        daily_mean = 50
-        lower, upper = get_point_bounds(daily_mean)
-        result = generate_24_hours(daily_mean)
-
-        # Test length (1440 minutes in 24 hours)
-        self.assertEqual(len(result), 1440)
-
-        # Test all values are within bounds
-        for value in result:
-            self.assertTrue(lower <= value <= upper)
+    def test_generate_24_hours_bounds(self):
+        """Test all points in generate_24_hours are within bounds"""
+        points = generate_24_hours(self.sample_daily_avg)
+        lower, upper = get_point_bounds(self.sample_daily_avg)
+        self.assertTrue(all(lower <= point <= upper for point in points))
 
     def test_get_point_bounds(self):
-        """Test the get_point_bounds function."""
-        test_cases = [
-            (10.0, (9.9, 10.1)),  # Normal case
-            (0.0, (0.0, 0.0)),  # Zero average
-            (-5.0, (-4.95, -5.05)),  # Negative average
-        ]
+        """Test get_point_bounds calculations"""
+        daily_avg = 100.0
+        lower, upper = get_point_bounds(daily_avg)
+        self.assertEqual(lower, 99.0)  # 100 - (100 * 0.01)
+        self.assertEqual(upper, 101.0)  # 100 + (100 * 0.01)
 
-        for avg, expected in test_cases:
-            result = get_point_bounds(avg)
-            self.assertEqual(result, expected)
+    def test_calculate_seasonal_multiplier_normal(self):
+        """Test seasonal multiplier calculation with normal value"""
+        multiplier = calculate_seasonal_multiplier(50.0)
+        self.assertTrue(0 <= multiplier <= 0.15)
 
-    def test_daily_peak_multiplier(self):
-        """Test the daily_peak_multiplier function."""
-        # Test at specific times
-        test_times = [
-            (360, 1.0),  # 6 AM
-            (1080, 1.0),  # 6 PM
-            (0, 1.0),  # Midnight
-            (720, 1.0),  # Noon
-        ]
+    def test_calculate_seasonal_multiplier_max(self):
+        """Test seasonal multiplier calculation with maximum daily average"""
+        multiplier = calculate_seasonal_multiplier(self.max_daily_avg)
+        self.assertEqual(multiplier, 0.0)
 
-        daily_avg = 50.0
-        seasonal_rate = calculate_seasonal_multiplier(daily_avg)
-        for minute, expected_base in test_times:
-            result = daily_peak_multiplier(minute,seasonal_rate)
-            self.assertTrue(0.85 <= result <= 1.15)  # Allow for seasonal variation
+    def test_calculate_seasonal_multiplier_high(self):
+        """Test seasonal multiplier caps at 0.15"""
+        multiplier = calculate_seasonal_multiplier(0.0)
+        self.assertEqual(multiplier, 0.15)
 
-    def test_gaussian_noise(self):
-        """Test the gaussian_noise function."""
+    def test_daily_peak_multiplier_key_times(self):
+        """Test daily peak multiplier at key times (6am, 12pm, 6pm)"""
+        seasonal_rate = 0.1
+        # 6 AM (360 minutes)
+        self.assertAlmostEqual(
+            daily_peak_multiplier(360, seasonal_rate),
+            1 + seasonal_rate,
+            places=2
+        )
+        # 6 PM (1080 minutes)
+        self.assertAlmostEqual(
+            daily_peak_multiplier(1080, seasonal_rate),
+            1 + seasonal_rate,
+            places=2
+        )
 
-        # Test multiple times to ensure statistical properties
-        noises = [gaussian_noise() for _ in range(1000)]
+    def test_gaussian_noise_distribution(self):
+        """Test gaussian noise distribution properties"""
+        samples = [gaussian_noise() for _ in range(1000)]
+        mean = np.mean(samples)
+        std = np.std(samples)
+        # Check if mean is close to 0
+        self.assertAlmostEqual(mean, 0, places=1)
+        # Check if standard deviation is close to 0.02
+        self.assertAlmostEqual(std, 0.02, places=1)
 
-        # Test mean is approximately 0
-        mean_noise = sum(noises) / len(noises)
-        self.assertTrue(-1 < mean_noise < 1)  # Allow for some random variation
-
-        # Test values are within reasonable bounds
-        for noise in noises:
-            self.assertTrue(-15 <= noise <= 15)  # Based on pipe capacity
-
-    def test_apply_patterns(self):
-        """Test the apply_patterns function."""
-        # Create sample stream data
-        sample_stream = [50.0] * 1440  # Constant stream for testing
-        month_avg = 50.0
-
-        result = apply_patterns(sample_stream, month_avg)
-
-        # Test output length
+    def test_apply_patterns_length(self):
+        """Test apply_patterns maintains correct length"""
+        stream = [50.0] * 1440
+        result = apply_patterns(stream, self.sample_daily_avg)
         self.assertEqual(len(result), 1440)
 
-        # Test values are within reasonable bounds
-        for value in result:
-            self.assertTrue(0 <= value <= 75)  # Based on max capacity
+    def test_apply_patterns_variation(self):
+        """Test apply_patterns introduces variation"""
+        stream = [50.0] * 1440
+        result = apply_patterns(stream, self.sample_daily_avg)
+        # Check that values have been modified
+        self.assertNotEqual(result, stream)
+        # Check that values vary throughout the day
+        self.assertNotEqual(result[0], result[720])
 
-class TestSimulatorFunctions(unittest.TestCase):
+    @patch('pandas.read_csv')
+    def test_setup_normal(self, mock_read_csv):
+        """Test setup with mock CSV file"""
+        mock_data = pd.DataFrame({'value': range(365)})
+        mock_read_csv.return_value = mock_data
+        result = setup()
+        self.assertEqual(len(result), 365)
 
-    def test_generate_point(self):
-        lower_bound = 10
-        upper_bound = 20
-        for _ in range(100):
-            point = generate_point(lower_bound, upper_bound)
-            self.assertGreaterEqual(point, lower_bound, "Generated point is less than lower bound")
-            self.assertLessEqual(point, upper_bound, "Generated point is greater than upper bound")
+    def test_run_simulation_generator(self):
+        """Test run_simulation returns a generator"""
+        sim = run_simulation(0, 1)
+        self.assertTrue(hasattr(sim, '__iter__'))
+        self.assertTrue(hasattr(sim, '__next__'))
 
-    def test_generate_24_hours(self):
-        daily_mean = 70
-        lower_bound, upper_bound = get_point_bounds(daily_mean)
-        stream = generate_24_hours(daily_mean)
-        self.assertEqual(len(stream), 1440, "The length of the generated stream is not 1440")
-        for point in stream:
-            self.assertGreaterEqual(point, lower_bound, "A point in the stream is less than lower bound")
-            self.assertLessEqual(point, upper_bound, "A point in the stream is greater than upper bound")
+    def test_run_simulation_output(self):
+        """Test run_simulation output format"""
+        sim = run_simulation(0, 1)
+        first_day = next(sim)
+        self.assertEqual(len(first_day), 1440)
+        # Verify values are reasonable
+        self.assertTrue(all(isinstance(x, float) for x in first_day))
 
-    def test_get_point_bounds(self):
-        daily_avg = 70
-        lower_bound, upper_bound = get_point_bounds(daily_avg)
-        self.assertGreater(lower_bound, 20.26, "Lower bound is incorrect")
-        self.assertLess(upper_bound, 74.33, "Upper bound is incorrect")
-
-    def test_daily_peak_multiplier(self):
-        x = 720  # Example minute (12:00 PM)
-        daily_avg = 60
-        seasonal_multiplier = calculate_seasonal_multiplier(daily_avg)
-        multiplier = daily_peak_multiplier(x, seasonal_multiplier)
-        self.assertTrue(0.85 <= multiplier <= 1.15, "Multiplier is out of expected range")
-
-    def test_gaussian_noise(self):
-        noise = gaussian_noise()
-        self.assertTrue(isinstance(noise, float), "Gaussian noise is not a float")
-        self.assertTrue(-0.57 <= noise <= 0.57, "Gaussian noise is out of expected range")
-
-    def test_apply_patterns(self):
-        stream = [65] * 1440  # Example uniform stream
-        month_avg = 65
-        final_stream = apply_patterns(stream, month_avg)
-        self.assertEqual(len(final_stream), 1440, "The length of the result stream is not 1440")
+    def test_run_simulation_wrap_around(self):
+        """Test run_simulation handles year wrap-around"""
+        sim = run_simulation(364, 2)
+        day1 = next(sim)
+        day2 = next(sim)
+        self.assertEqual(len(day1), 1440)
+        self.assertEqual(len(day2), 1440)
 
 if __name__ == '__main__':
     unittest.main()

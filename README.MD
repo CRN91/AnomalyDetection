@@ -14,12 +14,12 @@ This code was developed as part of Cobblestone Energy's application process
 ## Requirements
 
 Python 3.x  
-matplotlib 3.9.2
-numpy 2.1.2
-pandas 2.2.3
-scikit_learn 1.5.2
-scipy 1.14.1
-seaborn 0.13.2
+matplotlib 3.9.2  
+numpy 2.1.2  
+pandas 2.2.3  
+scikit_learn 1.5.2  
+scipy 1.14.1  
+seaborn 0.13.2  
 
 ## Documentation
 
