@@ -340,7 +340,6 @@ def continuous_anomaly_detection(
     except StopIteration:
       break
 
-
 def run_sim_anomaly_detector(start_day=0,duration = 365):
   # Create the simulator
   sim = run_simulation_anomalies(start_day,duration)

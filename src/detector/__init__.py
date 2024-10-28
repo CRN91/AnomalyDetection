@@ -1,4 +1,4 @@
-from .IF_detector import run_sim_anomaly_detector
+from .IF_detector import process_stream
 from .EMA_detector import process_simulation
 
-__all__ = ['run_sim_anomaly_detector','process_simulation']
+__all__ = ['process_stream','process_simulation']
