@@ -8,7 +8,7 @@ ANOMALY_MAX_DURATION = 5000 # minutes
 OUTAGE_THRESHOLD = 0.001
 LEAK_THRESHOLD = 0.001
 SURGE_THRESHOLD = 0.001
-FAULT_THRESHOLD = 0.8
+FAULT_THRESHOLD = 0.001
 
 def duration_calculator(stream_length, duration, random_start=True):
   """
@@ -134,9 +134,8 @@ def apply_sensor_fault(stream, duration, random_start = True):
   modified_stream = stream.copy()
 
   for i in range(start, end):
+    # Fault value can exceed max capacity (75) as it is an issue with the sensor and not actual capacity
     fault_value = random.gauss(stream[i], 5)
-    if fault_value > 75: # min function doesn't work with floats
-      fault_value = 75
     modified_stream[i] = fault_value
 
   return modified_stream, next_duration
