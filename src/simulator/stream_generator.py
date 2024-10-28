@@ -74,7 +74,7 @@ def apply_patterns(stream,daily_avg):
     # Each month's standard deviation is used for the Gaussian noise
     noise = gaussian_noise()
     # Patterns are applied to each value
-    new_stream.append(daily_peak)
+    new_stream.append(daily_peak+noise)
   return new_stream
 
 def setup():

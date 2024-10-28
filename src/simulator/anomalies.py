@@ -5,10 +5,10 @@ from src.simulator import run_simulation
 ANOMALY_MIN_DURATION = 1 # minutes
 ANOMALY_MAX_DURATION = 5000 # minutes
 
-OUTAGE_THRESHOLD = 0.001
-LEAK_THRESHOLD = 0.001
-SURGE_THRESHOLD = 0.001
-FAULT_THRESHOLD = 0.001
+OUTAGE_THRESHOLD = 0.005
+LEAK_THRESHOLD = 0.005
+SURGE_THRESHOLD = 0.005
+FAULT_THRESHOLD = 0.005
 
 def duration_calculator(stream_length, duration, random_start=True):
   """
