@@ -1,14 +1,24 @@
 import random
-from src.simulator import run_simulation
+from src.simulator import simulator
+from src.utils import load_config
 
 # Global Sim Values
-                           # outage, leak, surge, sensor fault
-ANOMALY_MULTIPLIER_BOUNDS = [(0,0),(0.9,0.95),(1.05,1.1),(-5,5)]
+try:
+  MAX_CAPACITY = float(load_config()['max_capacity'])
+except KeyError:
+  MAX_CAPACITY = 75
+
+ANOMALY_MULTIPLIER_BOUNDS = [
+  (0,0), # outage
+  (0.9,0.95), # leak
+  (1.05,1.1), # surge
+  (-5,5) # sensor fault
+]
 ANOMALY_MIN_DURATION = 1 # minutes
 ANOMALY_MAX_DURATION = 5000 # minutes
 ANOMALY_THRESHOLD = 0.005
 
-def apply_anomaly(stream, anomaly_multiplier, start, duration):
+def inject_anomaly(stream, anomaly_multiplier, start, duration):
   """
   Applies a multiplier to values in the datastream, depending on start and duration conditions.
 
@@ -20,15 +30,20 @@ def apply_anomaly(stream, anomaly_multiplier, start, duration):
   """
   stream_length = len(stream)
   end = start + duration
-  end = min(stream_length, end)
+  duration =  max(0, end - stream_length) # Remaining duration
+  end = min(stream_length, end) # End can't be out of index
 
-  for i in range(start, end):
-    anomaly = min(75, stream[i] * anomaly_multiplier) # Max capacity is 75
-    stream[i] = anomaly
+  # Handles incorrect start values
+  if start < stream_length:
+    for i in range(start, end):
+      anomaly = min(MAX_CAPACITY, stream[i] * anomaly_multiplier) # Max capacity is 75
+      stream[i] = anomaly
+  else:
+    duration = 0 # No remaining duration for incorrect start
 
-  return stream, max(0, end - stream_length) # duration for next stream
+  return stream, duration # duration for next stream
 
-def run_simulation_anomalies(start_day = 0, sim_duration = 365):
+def anomalous_simulator(start_day = 0, sim_duration = 365):
   """
   Runs the Gas Flow Simulation and randomly applying anomalies to the datastream.
 
@@ -36,7 +51,7 @@ def run_simulation_anomalies(start_day = 0, sim_duration = 365):
   :param sim_duration: Length of the simulation (Each event represents a minute)
   :return: 24 hours of Gas Flow data represented as a list of floats, chance to have anomalies
   """
-  sim = run_simulation(start_day, sim_duration)
+  sim = simulator(start_day, sim_duration)
 
   # Initial anomalies setup
   anomaly = False
@@ -52,7 +67,7 @@ def run_simulation_anomalies(start_day = 0, sim_duration = 365):
       anomaly_multiplier_bounds = random.choices(ANOMALY_MULTIPLIER_BOUNDS) # Type of anomaly
       anomaly_multiplier = random.uniform(anomaly_multiplier_bounds[0],anomaly_multiplier_bounds[1])
 
-      datastream, anomaly_duration = apply_anomaly(datastream, anomaly_multiplier, anomaly_start, anomaly_duration)
+      datastream, anomaly_duration = inject_anomaly(datastream, anomaly_multiplier, anomaly_start, anomaly_duration)
 
       # Sets outage for next stream
       anomaly = (anomaly_duration == 0)
@@ -63,7 +78,7 @@ def run_simulation_anomalies(start_day = 0, sim_duration = 365):
     yield datastream
 
 if __name__ == '__main__':
-  sim = run_simulation_anomalies()
+  sim = anomalous_simulator()
   count = 0
   for i in sim:
     print(i)

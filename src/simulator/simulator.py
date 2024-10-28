@@ -93,7 +93,7 @@ def setup():
 
   return avg_days
 
-def run_simulation(start_day = 0, duration = 365):
+def simulator(start_day = 0, duration = 365):
   """
   Runs the main simulation loop after setting up. Default to 1 year of data.
   Returns the completed datastream.
@@ -122,7 +122,7 @@ def run_simulation(start_day = 0, duration = 365):
   raise StopIteration
 
 if __name__ == '__main__':
-  sim = run_simulation()
+  sim = simulator()
   for _ in range(1400):
     try:
       print(next(sim))

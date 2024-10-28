@@ -1,6 +1,6 @@
 import matplotlib;matplotlib.use("TkAgg")
 from matplotlib.animation import FuncAnimation
-from src.simulator import run_simulation
+from src.simulator import simulator
 import matplotlib.pyplot as plt
 from src.utils import load_config
 
@@ -15,7 +15,7 @@ SIMULATION_DURATION = 10
 MINUTES_PER_DAY = 1440
 UPDATE_INTERVAL = 100  # milliseconds
 
-simulation = run_simulation(duration=SIMULATION_DURATION)
+simulation = simulator(duration=SIMULATION_DURATION)
 x_vals = []
 y_vals = []
 x_days = 0

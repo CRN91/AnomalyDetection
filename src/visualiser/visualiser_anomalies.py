@@ -1,6 +1,6 @@
 import matplotlib;matplotlib.use("TkAgg")
 from matplotlib.animation import FuncAnimation
-from src.simulator import run_simulation_anomalies
+from src.simulator import anomalous_simulator
 import matplotlib.pyplot as plt
 
 # Global simulation variables
@@ -8,7 +8,7 @@ SIMULATION_DURATION = 1000
 MINUTES_PER_DAY = 1440
 UPDATE_INTERVAL = 100  # milliseconds
 
-simulation = run_simulation_anomalies(sim_duration=SIMULATION_DURATION)
+simulation = anomalous_simulator(sim_duration=SIMULATION_DURATION)
 x_vals = []
 y_vals = []
 x_days = 0

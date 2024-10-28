@@ -2,11 +2,12 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 import numpy as np
-from src.simulator.stream_generator import (
+from src.simulator.simulator import (
     generate_point, generate_24_hours, get_point_bounds,
     calculate_seasonal_multiplier, daily_peak_multiplier,
-    gaussian_noise, apply_patterns, setup, run_simulation
+    gaussian_noise, apply_patterns, setup, simulator
 )
+
 
 class TestGasFlowSimulator(unittest.TestCase):
     def setUp(self):
@@ -117,13 +118,13 @@ class TestGasFlowSimulator(unittest.TestCase):
 
     def test_run_simulation_generator(self):
         """Test run_simulation returns a generator"""
-        sim = run_simulation(0, 1)
+        sim = simulator(0, 1)
         self.assertTrue(hasattr(sim, '__iter__'))
         self.assertTrue(hasattr(sim, '__next__'))
 
     def test_run_simulation_output(self):
         """Test run_simulation output format"""
-        sim = run_simulation(0, 1)
+        sim = simulator(0, 1)
         first_day = next(sim)
         self.assertEqual(len(first_day), 1440)
         # Verify values are reasonable
@@ -131,7 +132,7 @@ class TestGasFlowSimulator(unittest.TestCase):
 
     def test_run_simulation_wrap_around(self):
         """Test run_simulation handles year wrap-around"""
-        sim = run_simulation(364, 2)
+        sim = simulator(364, 2)
         day1 = next(sim)
         day2 = next(sim)
         self.assertEqual(len(day1), 1440)

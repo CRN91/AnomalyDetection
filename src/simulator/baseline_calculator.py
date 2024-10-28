@@ -2,11 +2,12 @@
 import pandas as pd
 
 if __name__ == "__main__":
-  """ Calculating monthly averages for the baseline as daily averages have outliers.
+  """ 
+  Calculating monthly averages for the baseline as daily averages have outliers.
     
-    Encountering lots of issues when it comes to the simulating the mean. The values are almost
-    there and I think the issue is the days that the pipeline is offline is skewing the results.
-    My solution will be to filter out these values and then try to simulate the offline days separately.
+  Encountering lots of issues when it comes to the simulating the mean. The values are almost
+  there and I think the issue is the days that the pipeline is offline is skewing the results.
+  My solution will be to filter out these values and then try to simulate the offline days separately.
   """
 
   # Load the data of daily averages of flow volume between 2023 and 2024
