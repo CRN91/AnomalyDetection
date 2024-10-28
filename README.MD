@@ -14,9 +14,12 @@ This code was developed as part of Cobblestone Energy's application process
 ## Requirements
 
 Python 3.x  
-matplotlib 3.9.2  
-numpy 2.1.2  
+matplotlib 3.9.2
+numpy 2.1.2
 pandas 2.2.3
+scikit_learn 1.5.2
+scipy 1.14.1
+seaborn 0.13.2
 
 ## Documentation
 
@@ -38,6 +41,11 @@ The files `visualiser.py`, `visualiser_anomalies.py`,
 anomalous sim, anomalous sim with exponential moving approach anomaly
 detection or anomalous sim with isolated forest anomaly detection
 respectively. The sims will update with live, continuous data.
+
+### Config
+
+Various properties of the simulation, including the baseline data can be
+altered inside the config found at `src/simulator/config.json`
 
 ## Testing
 
