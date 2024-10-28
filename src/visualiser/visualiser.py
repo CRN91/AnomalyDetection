@@ -37,6 +37,9 @@ def animate(i, line, ax):
 
   # Update the line data
   line.set_data(x_vals, y_vals)
+  # Scroll the x-axis
+  if len(x_vals) > 525960:
+    ax.set_xlim(x_vals[-525960], x_vals[-1])
 
   # Adjust the view limits
   ax.relim()
