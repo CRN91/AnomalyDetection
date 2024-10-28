@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import math
 import os
+import src.simulator.baseline_interpolator as bi
 
 def generate_point(lower_bound, upper_bound):
   return random.uniform(lower_bound, upper_bound)
@@ -85,7 +86,11 @@ def setup():
   """
   # Lookup table of interpolated gas flow graph
   file_path = os.path.join(os.path.dirname(__file__),"gas_flow_lookup_table.csv")
-  avg_days = list(pd.read_csv(file_path)['value'])
+  try:
+    avg_days = list(pd.read_csv(file_path)['value'])
+  except FileNotFoundError:
+    avg_days = list(bi.main()['value'])
+
   return avg_days
 
 def run_simulation(start_day = 0, duration = 365):
@@ -116,7 +121,10 @@ def run_simulation(start_day = 0, duration = 365):
   print("Completed Simulation")
 
 if __name__ == '__main__':
-  run_simulation()
+  sim = run_simulation()
+  for _ in range(10):
+    print(next(sim))
+
   #daily_mean = 50
   #seasonal_rate = calculate_seasonal_multiplier(daily_mean)
   #print(daily_peak_multiplier(720,seasonal_rate))

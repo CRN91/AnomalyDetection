@@ -1,0 +1,5 @@
+{
+    "pipeline_name": "Easington-Langeled",
+    "max_capacity": 75,
+    "baseline_file": "Monthly_Baselines.csv"
+}

@@ -2,14 +2,14 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
-from src.detector import run_sim_anomaly_detector
+from src.detector import process_stream
 
 # Global simulation variables
 SIMULATION_DURATION = 1000
 MINUTES_PER_DAY = 1440
 UPDATE_INTERVAL = 100  # milliseconds
 
-simulation = run_sim_anomaly_detector(start_day=0,duration=SIMULATION_DURATION)
+simulation = process_stream()
 x_vals = []
 y_vals = []
 x_days = 0
