@@ -2,7 +2,7 @@ import random
 from src.simulator import run_simulation
 
 # Global Sim Values
-#                            outage   leak       surge  sensor fault
+                           # outage, leak, surge, sensor fault
 ANOMALY_MULTIPLIER_BOUNDS = [(0,0),(0.9,0.95),(1.05,1.1),(-5,5)]
 ANOMALY_MIN_DURATION = 1 # minutes
 ANOMALY_MAX_DURATION = 5000 # minutes
@@ -13,8 +13,9 @@ def apply_anomaly(stream, anomaly_multiplier, start, duration):
   Applies a multiplier to values in the datastream, depending on start and duration conditions.
 
   :param stream: Stream to apply anomaly to
-  :param duration: Duration for the anomaly to apply for
   :param anomaly_multiplier: Data point is multiplied by this number
+  :param start: start index of anomaly
+  :param duration: Duration for the anomaly to apply for
   :return: altered stream, anomaly duration for the consecutive stream
   """
   stream_length = len(stream)
