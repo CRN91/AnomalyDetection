@@ -36,11 +36,10 @@ on the simulation is available to read in `docs/about.MD`.
 Clone the repository into your local machine and install all
 the requirements.  
 
-The files `visualiser.py`, `visualiser_anomalies.py`, 
-`visualiser_EMA.py` and `visualiser_IF.py` run the nominal simulation,
-anomalous sim, anomalous sim with exponential moving approach anomaly
-detection or anomalous sim with isolated forest anomaly detection
-respectively. The sims will update with live, continuous data.
+Running the script `main.py` will simulate and visualise 1000
+days of gas flow data with randomly injected anomalies. An
+implementation of an Isolation Forest algorithm will attempt to
+detect the anomalies.
 
 ### Config
 
