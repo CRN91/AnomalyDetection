@@ -102,13 +102,13 @@ def simulator(start_day = 0, duration = 365):
   :param duration (int): how many days to simulate
   :return: completed datastream where each value represents the gas flow per day at that minute.
   """
-  #print("Starting Simulation")
+  print(f"Starting Simulation for {duration} days")
   avg_days = setup()
   # Iterate through each day, generating a stream of data for each minute
   for day in range(start_day, start_day+duration):
+
     if day > 364:
       day = day % 365
-
     # Gets the baselines for these values
     daily_flow_mean = avg_days[day]
 
@@ -118,7 +118,7 @@ def simulator(start_day = 0, duration = 365):
     final_stream = apply_patterns(stream, daily_flow_mean)
 
     yield final_stream
-  #print("Simulation Complete")
+  print("Simulation Complete")
   raise StopIteration
 
 if __name__ == '__main__':

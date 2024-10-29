@@ -43,20 +43,20 @@ def inject_anomaly(stream, anomaly_multiplier, start, duration):
 
   return stream, duration # duration for next stream
 
-def anomalous_simulator(start_day = 0, sim_duration = 365):
+def anomalous_simulator(start_day = 0, duration = 365):
   """
   Runs the Gas Flow Simulation and randomly applying anomalies to the datastream.
 
   :param start_day: The day of the year to start the simulation
-  :param sim_duration: Length of the simulation (Each event represents a minute)
+  :param duration: Length of the simulation (Each event represents a minute)
   :return: 24 hours of Gas Flow data represented as a list of floats, chance to have anomalies
   """
-  sim = simulator(start_day, sim_duration)
+  sim = simulator(start_day, duration)
 
   # Initial anomalies setup
   anomaly = False
 
-  for _ in range(sim_duration-start_day):
+  for _ in range(duration - start_day):
     datastream =  next(sim)
 
     # Inserting anomaly

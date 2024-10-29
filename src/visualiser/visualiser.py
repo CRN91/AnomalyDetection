@@ -65,9 +65,15 @@ def animate(i, line, ax1, alert_text):
       if anomaly_indices:
         alert_text.set_text(f'ANOMALY DETECTED!\nAt minute(s): {", ".join(map(str, anomaly_indices))}')
         alert_text.set_bbox(dict(facecolor='red', edgecolor='darkred', alpha=0.3))
+
+        # Plot anomaly as a 2 straight red lines with the anomalies inbetween
+        ax1.plot([anomaly_indices[0] / 1440 for _ in range(20, 80)], [j for j in range(20, 80)], color='red', alpha=0.5)
+        ax1.plot([anomaly_indices[-1] / 1440 for _ in range(20, 80)], [j for j in range(20, 80)], color='red',alpha=0.5)
       else:
         alert_text.set_text('No anomalies detected')
         alert_text.set_bbox(dict(facecolor='white', edgecolor='gray', alpha=0.8))
+
+
     except ValueError:
       datastream = next(simulation)
 
@@ -87,7 +93,7 @@ def animate(i, line, ax1, alert_text):
     ax1.relim()
     ax1.autoscale_view()
 
-    plt.tight_layout()
+    #plt.tight_layout()
 
   except RuntimeError:
     ani.event_source.stop()
@@ -96,6 +102,7 @@ def main():
   fig, ax1, ax2, line, alert_text = setup_plot()
 
   # Create animation
+  global ani
   ani = FuncAnimation(
     fig,
     animate,
