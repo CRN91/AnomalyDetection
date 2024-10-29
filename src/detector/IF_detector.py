@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Callable
-from src.simulator import run_simulation_anomalies
+from src.simulator import anomalous_simulator
 import random
 import math
 from statistics import mean
 
-sim = run_simulation_anomalies()
+sim = anomalous_simulator()
 
 
 # Enhanced data structures to handle time context
@@ -278,7 +278,7 @@ def example_usage():
 ##########
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Callable, Generator, Iterator
-from src.simulator import run_simulation_anomalies
+from src.simulator import anomalous_simulator
 import random
 import math
 from statistics import mean
@@ -342,7 +342,7 @@ def continuous_anomaly_detection(
 
 def run_sim_anomaly_detector(start_day=0,duration = 365):
   # Create the simulator
-  sim = run_simulation_anomalies(start_day,duration)
+  sim = anomalous_simulator(start_day, duration)
 
   # Create the continuous detector
   detector = continuous_anomaly_detection(

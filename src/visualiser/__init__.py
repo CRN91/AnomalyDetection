@@ -1,3 +1,3 @@
-from .visualiser import Visualiser
+from .visualiser import *
 
-__all__ = ['Visualiser']
+__all__ = ['main']

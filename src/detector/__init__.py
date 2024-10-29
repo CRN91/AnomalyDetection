@@ -1,4 +1,3 @@
-from .IF_detector import process_stream
-from .EMA_detector import process_simulation
+from .IF_detector2 import detector
 
-__all__ = ['process_stream','process_simulation']
+__all__ = ['detector']

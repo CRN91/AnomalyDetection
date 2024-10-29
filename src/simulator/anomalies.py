@@ -61,10 +61,11 @@ def anomalous_simulator(start_day = 0, sim_duration = 365):
 
     # Inserting anomaly
     if anomaly:
+      print("Adding anomaly")
       # Values are random
       anomaly_start = random.randint(0,1440)
       anomaly_duration = random.randint(ANOMALY_MIN_DURATION,ANOMALY_MAX_DURATION)
-      anomaly_multiplier_bounds = random.choices(ANOMALY_MULTIPLIER_BOUNDS) # Type of anomaly
+      anomaly_multiplier_bounds = ANOMALY_MULTIPLIER_BOUNDS[random.randint(0,3)] # Type of anomaly
       anomaly_multiplier = random.uniform(anomaly_multiplier_bounds[0],anomaly_multiplier_bounds[1])
 
       datastream, anomaly_duration = inject_anomaly(datastream, anomaly_multiplier, anomaly_start, anomaly_duration)

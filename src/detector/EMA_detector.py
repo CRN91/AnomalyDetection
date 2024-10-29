@@ -2,7 +2,7 @@ import numpy as np
 from typing import List, Tuple, Optional
 from collections import deque
 
-from src.simulator import run_simulation_anomalies
+from src.simulator import anomalous_simulator
 
 
 def initialize_baseline(first_day_data: List[float]) -> Tuple[np.ndarray, float]:
@@ -108,7 +108,7 @@ def generate_simulation_data(start_day=0, duration=365):
   Returns:
       List of daily data lists
   """
-  sim = run_simulation_anomalies(start_day, duration)
+  sim = anomalous_simulator(start_day, duration)
   all_days = []
 
   for _ in range(duration):
