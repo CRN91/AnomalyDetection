@@ -4,10 +4,10 @@ from src.simulator import simulator, anomalous_simulator, ANOMALY_THRESHOLD
 def generate_test_data():
     sim = anomalous_simulator()
     # Get 1 week of data
-    test_data = []
-    for _ in range(365):
-        test_data = test_data + next(sim)
-    test_data_2d = [(value, index) for index, value in enumerate(test_data)]
+    test_data_2d = []
+    for day in range(365):
+        test_data_24 = next(sim)
+        test_data_2d = test_data_2d + [(value, index + (1440 * day)%365) for index, value in enumerate(test_data_24)]
 
     ## Manually insert anomaly
     #test_data_2d[50:550] = [(20, i) for i in range(50,550)]
@@ -16,7 +16,7 @@ def generate_test_data():
     return test_data_2d
 
 def train_model(test_data, contamination=ANOMALY_THRESHOLD):
-    model = IsolationForest(n_estimators=50, max_samples='auto', contamination=contamination, max_features=1.0)
+    model = IsolationForest(n_estimators=100, max_samples='auto', contamination=ANOMALY_THRESHOLD, max_features=1.0)
     model.fit(test_data)
     return model
 
@@ -42,7 +42,7 @@ def detector(duration=365):
 
         # Anomaly detect
         predictions = IF.predict(data_2d)
-        anomaly_indices = [index for (value, index), label in zip(data_2d, predictions) if label == -1]
+        anomaly_indices = [index + (1440*day) for (value, index), label in zip(data_2d, predictions) if label == -1]
 
         yield data, anomaly_indices
         #print(f"Day {day}: Anomalous points: {len(anomalies)}")
